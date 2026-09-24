@@ -1,0 +1,37 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: civiclink-db
+    environment:
+      POSTGRES_USER: civiclink
+      POSTGRES_PASSWORD: civiclink
+      POSTGRES_DB: civiclink
+    ports:
+      - "5432:5432"
+    volumes:
+      - civiclink_pg:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U civiclink -d civiclink"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  api:
+    build:
+      context: ./backend
+    container_name: civiclink-api
+    env_file:
+      - ./backend/.env
+    environment:
+      DATABASE_URL: postgresql+psycopg://civiclink:civiclink@db:5432/civiclink
+    ports:
+      - "8000:8000"
+    volumes:
+      - civiclink_uploads:/app/uploads
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  civiclink_pg:
+  civiclink_uploads:
